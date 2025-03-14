@@ -40,7 +40,7 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Finland's company registry
+          Finland&apos;s company registry
           <small>Using open API data from: <a className={styles.outsideLink} href={subtitle}>PRH Avoin Data</a></small>
         </h1>
 
