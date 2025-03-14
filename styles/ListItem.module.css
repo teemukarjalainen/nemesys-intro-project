@@ -1,0 +1,45 @@
+.listItem {
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.mainInfo {
+    display: inline-block;
+    width: 100%;
+}
+
+.leftContainer {
+    height: 100%;
+    float: inline-start;
+}
+
+.rightContainer {
+    height: 100%;
+    float: inline-end;
+}
+
+.companyName {
+    font-weight: bold;
+}
+
+.companyIdTitle {
+    font-weight: bold;
+    display: inline-block;
+}
+
+.companyId {
+    font-weight: normal;
+    display: inline-block;
+}
+
+.chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 13.1l-8-8 2.1-2.2 5.9 5.9 5.9-5.9 2.1 2.2z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    border-radius: 5px;
+    border-width: 1px;
+    border: 3px solid #0070f3;
+    padding: 10px;
+}

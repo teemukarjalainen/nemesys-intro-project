@@ -1,93 +1,92 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import useSWR from 'swr';
-import type { ListResponse } from './api/list';
-import { ListItem, Item } from '../components/ListItem';
 
 import styles from '../styles/Home.module.css';
+import { useState } from 'react';
+import ListItem from '../components/ListItem';
+
+const MAX_RESULTS_PER_PAGE = 50; // This is defined by the open API at: https://avoindata.prh.fi/fi/krek/swagger-ui
 
 /** Get data from API (used as a fetcher for SWR) */
 const get = (...args: Parameters<typeof fetch>) => fetch(...args).then(res => res.json());
 
-/** Send data to the API via a POST request */
-const post = (url: string, data: any) => fetch(url, {
-  method: 'POST',
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(data)
-});
-
 const Home: NextPage = () => {
-  const { data, mutate, isLoading, isValidating } = useSWR<ListResponse>('/api/list', get);
+  const [pageNumber, setPageNumber] = useState(1);
+  // Fetcher for the open API using page number as a query parameter so we can implement pagination
+  const { data, error, isLoading } = useSWR(`/api/fetch?page=${pageNumber}`, get);
+  // Fetch the "subtitle" which has information regarding the open API used for this project, this was mostly for learning purposes in using Diploi's environment variables
   const { data: subtitle } = useSWR<string>('/api/subtitle', get);
 
-  const handleItemAdd = async () => {
-    // Tell API to add a new line
-    await post('/api/add', {});
-
-    // Tell SWR to refetch list from API
-    mutate(data);
-  }
-
-  const handleItemChange = async (updated: Item) => {
-    const list = [...(data?.list || [])];
-    const item = list.find(item => item.id === updated.id);
-    if (!item) return;
-
-    item.name = updated.name;
-    item.checked = updated.checked;
-
-    // Tell API about this change
-    await post('/api/update', updated);
-
-    // Update the local state right away & tell SWR to refetch list from API
-    mutate({ list });
+  // Handle next and previous page actions
+  const nextPage = () => {
+    if (data?.data?.companies?.length === 50) {
+      setPageNumber(pageNumber + 1);
+    }
   };
 
-  const handleItemDelete = async (deleted: Item) => {
-    const list = (data?.list || []).filter(item => item.id !== deleted.id)
-
-    // Tell API about this change
-    await post('/api/delete', deleted);
-
-    // Update the local state right away & tell SWR to refetch list from API
-    mutate({ list });
+  const previousPage = () => {
+    if (pageNumber > 1) {
+      setPageNumber(pageNumber - 1);
+    }
   };
 
   return (
     <>
       <Head>
-        <title>Diploi Next.js To-Do App</title>
+        <title>Nemesys intro project</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          What To Do?
-          <small>{subtitle || '...'}</small>
+          Finland&apos;s company registry
+          <small>Using open API data from: <a className={styles.outsideLink} href={subtitle}>PRH Avoin Data</a></small>
         </h1>
 
         {isLoading && <div style={{ padding: 50 }}>Loading…</div>}
-        {!isLoading && (
+        {error || data?.error && <div style={{ padding: 50 }}> Error: { error?.message || data?.error} </div>}
+        {!isLoading && !error && (
           <>
+            <br/>
+            <div className={styles.totalResults}>Total results: {data?.data?.totalResults}</div>
             <ol className={styles.list}>
-              {(data?.list || []).map((item) => (
-                <ListItem key={item.id} {...item} onChange={handleItemChange} onDelete={handleItemDelete} />
+              {data?.data?.companies?.map((item: any, index: number) => (
+                <ListItem
+                  key={index}
+                  businessId={item.businessId?.value}
+                  names={item.names}
+                  mainBusinessLine={item.mainBusinessLine}
+                  companyForms={item.companyForms}
+                  registeredEntries={item.registeredEntries}
+                ></ListItem>
               ))}
             </ol>
-            <button className={styles.add} disabled={isLoading || isValidating} onClick={handleItemAdd}>
-              Add Item
-            </button>
           </>
+        )}
+        {!error && (
+          <div className={styles.pagination}>
+            <button
+              disabled={pageNumber <= 1 || isLoading}
+              onClick={previousPage}
+              className={styles.pageButton}
+            >
+              Previous
+            </button>
+            <span className={styles.pageNumber}>Page {pageNumber}</span>
+            <button
+              disabled={data?.data?.companies?.length < MAX_RESULTS_PER_PAGE || isLoading}
+              onClick={nextPage}
+              className={styles.pageButton}
+            >
+              Next
+            </button>
+          </div>
         )}
 
         <footer className={styles.footer}>
           <p>
-            You are looking at a <a href="#">Next.js To-Do example</a> for{' '}
-            <a href="https://diploi.dev">Diploi</a>,<br />
-            the easy-to-use app development platform.
+            © Copyright 2024 <a href="https://www.linkedin.com/in/teekarjalainen/">Teemu Karjalainen</a>
           </p>
         </footer>
       </main>

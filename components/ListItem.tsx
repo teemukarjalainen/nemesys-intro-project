@@ -1,55 +1,49 @@
-import { FC, ChangeEvent, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+import styles from '../styles/ListItem.module.css'; // Optional: Add styling for ListItem
 
-export interface Item {
-  id: number;
-  name: string;
-  checked: boolean;
+interface ListItemProps {
+    businessId: string;
+    names: Array<{ name: string; type: string; registrationDate: string, endDate: string }>;
+    mainBusinessLine: {
+        descriptions: Array<{ languageCode: string; description: string }>;
+    };
+    companyForms: Array<{ descriptions: Array<{ languageCode: string; description: string }> }>;
+    registeredEntries: Array<{ descriptions: Array<{ languageCode: string, description: string }> }>;
 }
 
-export interface ListItemProps extends Item {
-  id: number;
-  name: string;
-  checked: boolean;
-  onChange: (item:Item ) => void;
-  onDelete: (item:Item)  => void;
-}
+const ListItem: React.FC<ListItemProps> = ({businessId, names, mainBusinessLine, companyForms, registeredEntries }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    // Use the first company name from array
+    const companyName = names?.[0]?.name || "No company name";
+    // Use the description for main business line fetching with languageCode "3" which is english as per the API: https://avoindata.prh.fi/fi/krek/swagger-ui
+    const businessLineDescription = mainBusinessLine?.descriptions?.find((desc) => desc.languageCode === "3")?.description || "No description available";
+    // Get the company type or "form"
+    const companyFormDescription = companyForms?.[0]?.descriptions?.find((desc) => desc.languageCode === "3")?.description || "No company form description";
+    // Get the registration status (active/ceased)
+    const statusDescription = registeredEntries?.[0]?.descriptions?.find((desc) => desc.languageCode === "3")?.description || "Status unknown";
 
-export const ListItem: FC<ListItemProps> = ({ id, name, checked, onChange, onDelete }) => {
-  const item = { id, name, checked };
-  const nameRef = useRef<HTMLInputElement>(null);
-
-  // Update name input value when it changes outside of this component
-  useEffect(() => {
-    if (!nameRef.current) return;
-    nameRef.current.value = name;
-  }, [name]);
-
-  const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const updated = { ...item, name: event.target.value };
-    onChange(updated);
-  };
-
-  const handleToggle = (event: ChangeEvent<HTMLInputElement>) => {
-    const updated = { ...item, checked: event.target.checked };
-    onChange(updated);
-  };
-
-  const handleDelete = () => onDelete(item);
-
-  return (
-    <li key={id}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={handleToggle}
-      />
-      <input
-        type="text"
-        placeholder="…"
-        onBlur={handleNameChange}
-        ref={nameRef}
-      />
-      <button onClick={handleDelete}>×</button>
-    </li>
-  );
+    return (
+        <div className={styles.listItem}>
+            <div className={styles.mainInfo}>
+                <div className={styles.leftContainer}>
+                    <div className={styles.companyName}>{companyName}</div>
+                    <div className={styles.companyIdTitle}>Business ID: <div className={styles.companyId}>{businessId}</div></div>
+                </div>
+                <div className={styles.rightContainer}>
+                    <button className={styles.chevron} onClick={() => setIsOpen((prev) => !prev)}/>
+                </div>
+            </div>
+            {isOpen && (
+                <div>
+                    <p><strong>Main Business Line:</strong> {businessLineDescription}</p>
+                    <p><strong>Company Form:</strong> {companyFormDescription}</p>
+                    <p><strong>Status:</strong> {statusDescription}</p>
+                    <p><strong>Registration Date:</strong> {names?.[0]?.registrationDate}</p>
+                    <p><strong>End Date:</strong> {names?.[0]?.endDate || "N/A"}</p>
+                </div>
+            )}
+        </div>
+    );
 };
+
+export default ListItem;
